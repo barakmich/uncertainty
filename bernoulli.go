@@ -3,7 +3,6 @@ package uncertainty
 import (
 	"fmt"
 	"math"
-	"math/rand"
 )
 
 type Bernoulli struct {
@@ -22,7 +21,7 @@ func NewBernoulli(probability float64) *Bernoulli {
 }
 
 func (b *Bernoulli) sample() float64 {
-	r := rand.Float64()
+	r := randFloat64()
 	if r < b.probability {
 		return 1.0
 	}
