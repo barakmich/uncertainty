@@ -36,3 +36,10 @@ func (s *Samples) Average() float64 {
 	n := float64(len(s.samples))
 	return total / n
 }
+
+func (s *Samples) First() float64 {
+	if len(s.samples) == 0 {
+		panic("No samples in the Sampling distribution")
+	}
+	return s.samples[0]
+}
