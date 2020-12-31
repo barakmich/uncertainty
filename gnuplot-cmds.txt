@@ -1,0 +1,4 @@
+set style fill solid
+binwidth=0.05
+bin(x, width) = width*floor(x / width)
+plot 'test.csv' using (bin($1,binwidth)):(1.0) smooth freq with boxes

@@ -25,7 +25,7 @@ func ExpectedValueWithConfidence(u Uncertain) MeanAndConfidenceInterval {
 	mean := m.Average()
 
 	squaredError := 0.0
-	for _, s := range m.samples {
+	for _, s := range m.Samples {
 		squaredError += math.Pow(s-mean, 2.0)
 	}
 	sdev := math.Sqrt(squaredError / float64(sampleSize-1))
