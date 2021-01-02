@@ -14,11 +14,9 @@ func (mci MeanAndConfidenceInterval) String() string {
 	return fmt.Sprintf("%0.4f +- %0.4f", mci.Mean, mci.CI)
 }
 
-func ExpectedValueWithConfidence(u Uncertain) MeanAndConfidenceInterval {
-	// Constants
-	sampleSize := 1000
-	zScore95 := 1.96
-	// End constants
+func ExpectedValueWithConfidence(u Uncertain, opts ...Option) MeanAndConfidenceInterval {
+	sampleSize := getSampleSize(opts, 1000)
+	zScore := getZScore(opts, zScore95)
 
 	m := Materialize(u, sampleSize)
 
@@ -33,7 +31,7 @@ func ExpectedValueWithConfidence(u Uncertain) MeanAndConfidenceInterval {
 	// Since this is a sample standard deviation we're doing half of a t-test error
 	// estimation using the square root of the number of samples to guide the rande
 	// of the z scores.
-	ci := zScore95 * sdev / math.Sqrt(float64(sampleSize))
+	ci := zScore * sdev / math.Sqrt(float64(sampleSize))
 	return MeanAndConfidenceInterval{
 		Mean: mean,
 		CI:   ci,

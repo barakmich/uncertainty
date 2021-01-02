@@ -32,8 +32,9 @@ func (b *Bernoulli) Pr() bool {
 	return b.ProbTrueAtLeast(0.5)
 }
 
-func (b *Bernoulli) ProbTrueAtLeast(prob float64) bool {
-	return b.sequentialProbabilityRatioTest(prob, 0.05, 0.03)
+func (b *Bernoulli) ProbTrueAtLeast(prob float64, opts ...Option) bool {
+	errorPercent := getPercentError(opts, 0.05)
+	return b.sequentialProbabilityRatioTest(prob, errorPercent, 0.03, opts...)
 }
 
 // sequentialProbabilityRatioTest implements
@@ -42,12 +43,10 @@ func (b *Bernoulli) ProbTrueAtLeast(prob float64) bool {
 // probability at least prob.
 // confidence is the p value for how much error we accept (for 95% confidence, this is 5% or 0.05)
 // indifference is the size of the indifference region (where we're not sure)
-func (b *Bernoulli) sequentialProbabilityRatioTest(prob, confidence, indifference float64) bool {
-	// Constants for the function -- exposing them is left as a future exercise as necessary
-	maxSampleSize := 10_000
+func (b *Bernoulli) sequentialProbabilityRatioTest(prob, confidence, indifference float64, opts ...Option) bool {
+	maxSampleSize := getSampleSize(opts, 10_000)
 	initSampleSize := 10
 	sampleSizeStep := 10
-	// End constants
 
 	nSamples := 0
 
