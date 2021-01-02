@@ -7,9 +7,14 @@ import (
 
 type Bernoulli struct {
 	probability float64
+	i           int
 }
 
 var _ Uncertain = &Bernoulli{}
+
+func Flip(probability float64) *Bernoulli {
+	return NewBernoulli(probability)
+}
 
 func NewBernoulli(probability float64) *Bernoulli {
 	if probability > 1.0 || probability < 0.0 {
@@ -17,44 +22,61 @@ func NewBernoulli(probability float64) *Bernoulli {
 	}
 	return &Bernoulli{
 		probability: probability,
+		i:           newID(),
 	}
 }
 
-func (b *Bernoulli) sample() float64 {
-	r := randFloat64()
-	if r < b.probability {
+func convertBoolSampleToFloat(b bool) float64 {
+	if b {
 		return 1.0
 	}
 	return 0.0
 }
 
-func (b *Bernoulli) Not() *Bernoulli {
-	return NewBernoulli(1.0 - b.probability)
+func convertFloatSampleToBool(f float64) bool {
+	if f < 0.5 {
+		return false
+	}
+	return true
 }
 
-func (b *Bernoulli) Or(other *Bernoulli) *Bernoulli {
-	q1 := 1.0 - b.probability
-	q2 := 1.0 - other.probability
-	return NewBernoulli(1.0 - (q1 * q2))
+func (b *Bernoulli) sample() float64 {
+	if b.sampleBool() {
+		return 1.0
+	}
+	return 0.0
 }
 
-func (b *Bernoulli) And(other *Bernoulli) *Bernoulli {
-	return NewBernoulli(b.probability * other.probability)
+func (b *Bernoulli) sampleBool() bool {
+	r := randFloat64()
+	if r < b.probability {
+		return true
+	}
+	return false
 }
 
-func (b *Bernoulli) Xor(other *Bernoulli) *Bernoulli {
-	x := b.probability * (1.0 - other.probability)
-	y := (1.0 - b.probability) * other.probability
-	return NewBernoulli(x + y)
+func (b *Bernoulli) id() int {
+	return b.i
+}
+
+func (b *Bernoulli) sampleWithTrace() *sample {
+	val := b.sample()
+	s := newSample(val)
+	s.addTrace(b.i, val)
+	return s
 }
 
 func (b *Bernoulli) Pr() bool {
-	return b.ProbTrueAtLeast(0.5)
+	return Pr(b)
 }
 
-func (b *Bernoulli) ProbTrueAtLeast(prob float64, opts ...Option) bool {
+func Pr(b UncertainBool) bool {
+	return ProbTrueAtLeast(b, 0.5)
+}
+
+func ProbTrueAtLeast(b UncertainBool, prob float64, opts ...Option) bool {
 	errorPercent := getPercentError(opts, 0.05)
-	return b.sequentialProbabilityRatioTest(prob, errorPercent, 0.03, opts...)
+	return sequentialProbabilityRatioTest(b, prob, errorPercent, 0.03, opts...)
 }
 
 // sequentialProbabilityRatioTest implements
@@ -63,7 +85,7 @@ func (b *Bernoulli) ProbTrueAtLeast(prob float64, opts ...Option) bool {
 // probability at least prob.
 // confidence is the p value for how much error we accept (for 95% confidence, this is 5% or 0.05)
 // indifference is the size of the indifference region (where we're not sure)
-func (b *Bernoulli) sequentialProbabilityRatioTest(prob, confidence, indifference float64, opts ...Option) bool {
+func sequentialProbabilityRatioTest(b UncertainBool, prob, confidence, indifference float64, opts ...Option) bool {
 	maxSampleSize := getSampleSize(opts, 10_000)
 	initSampleSize := 10
 	sampleSizeStep := 10
@@ -84,14 +106,13 @@ func (b *Bernoulli) sequentialProbabilityRatioTest(prob, confidence, indifferenc
 	wSumTrue := 0.0
 
 	for nSamples = 0; nSamples < initSampleSize; nSamples++ {
-		sample := b.sample()
-		if sample == 1.0 {
+		sample := b.sampleBool()
+		if sample {
 			k += 1
-			wSumTrue += b.probability
-			wSum += b.probability
+			wSumTrue += 1.0
 		} else {
-			wSum += 1.0 - b.probability
 		}
+		wSum += 1.0
 	}
 
 	for nSamples <= maxSampleSize {
@@ -107,11 +128,9 @@ func (b *Bernoulli) sequentialProbabilityRatioTest(prob, confidence, indifferenc
 			sample := b.sample()
 			if sample == 1.0 {
 				k += 1
-				wSumTrue += b.probability
-				wSum += b.probability
-			} else {
-				wSum += 1.0 - b.probability
+				wSumTrue += 1.0
 			}
+			wSum += 1.0
 		}
 		nSamples += sampleSizeStep
 	}

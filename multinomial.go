@@ -3,7 +3,10 @@ package uncertainty
 type Multinomial struct {
 	values  []float64
 	cutoffs []float64
+	i       int
 }
+
+var _ Uncertain = &Multinomial{}
 
 func NewMultinomial(values []float64, probabilities []float64) *Multinomial {
 	multinomialEpsilon := 0.0001
@@ -22,6 +25,7 @@ func NewMultinomial(values []float64, probabilities []float64) *Multinomial {
 	return &Multinomial{
 		values:  values,
 		cutoffs: cutoffs,
+		i:       newID(),
 	}
 }
 
@@ -49,4 +53,15 @@ func (m *Multinomial) sample() float64 {
 		}
 	}
 	return m.values[len(m.values)-1]
+}
+
+func (m *Multinomial) id() int {
+	return m.i
+}
+
+func (m *Multinomial) sampleWithTrace() *sample {
+	val := m.sample()
+	t := newSample(val)
+	t.addTrace(m.i, val)
+	return t
 }

@@ -26,7 +26,8 @@ func TestGaussianExpectedValue(t *testing.T) {
 func TestGaussianSample(t *testing.T) {
 	x := NewNormal(5.0, 2.0)
 	m := Materialize(x, 100)
-	for _, v := range m.Samples {
+	for _, s := range m.Samples {
+		v := s.value
 		if v < -3.0 || v > 13.0 {
 			t.Error("Gaussian sample way out of range")
 		}

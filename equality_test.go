@@ -39,7 +39,7 @@ func TestMontyHall(t *testing.T) {
 	chosenDoor := NewEvenMultinomial([]float64{1.0, 2.0, 3.0})
 	match := Equals(carInDoor, chosenDoor)
 	// Now monty opens a door
-	switchWins := match.Not()
+	switchWins := Not(match)
 
 	v := Materialize(switchWins, 1000).Average()
 	t.Log(ExpectedValueWithConfidence(switchWins, SampleSize(20000)))

@@ -17,7 +17,8 @@ func TestBernoulliMultinomial(t *testing.T) {
 func TestDice(t *testing.T) {
 	d6 := NewDice(6)
 	b := GreaterThan(d6, NewConstant(4.1))
-	if !Within(b.probability, 0.3333, epsilon) {
+	m := Materialize(b, 1000)
+	if !Within(m.Average(), 0.3333, epsilon) {
 		t.Error("Probability of high rolls doesn't test")
 	}
 }

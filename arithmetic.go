@@ -1,78 +1,62 @@
 package uncertainty
 
+type arithmeticOperation struct {
+	a, b    Uncertain
+	i       int
+	combine combineFunc
+}
+
+type combineFunc func(x float64, y float64) float64
+
 func Add(a Uncertain, b Uncertain) Uncertain {
-	return &AddVariable{
-		a: a,
-		b: b,
-	}
-}
-
-type AddVariable struct {
-	a, b Uncertain
-}
-
-func (add *AddVariable) sample() float64 {
-	aval := add.a.sample()
-	bval := add.b.sample()
-	return aval + bval
+	return newArithmetic(a, b, func(x, y float64) float64 {
+		return x + y
+	})
 }
 
 func Sub(a Uncertain, b Uncertain) Uncertain {
-	return &SubVariable{
-		a: a,
-		b: b,
-	}
-}
-
-type SubVariable struct {
-	a, b Uncertain
-}
-
-func (sub *SubVariable) sample() float64 {
-	aval := sub.a.sample()
-	bval := sub.b.sample()
-	return aval - bval
+	return newArithmetic(a, b, func(x, y float64) float64 {
+		return x - y
+	})
 }
 
 func Mul(a Uncertain, b Uncertain) Uncertain {
-	return &MulVariable{
-		a: a,
-		b: b,
-	}
-}
-
-type MulVariable struct {
-	a, b Uncertain
-}
-
-func (mul *MulVariable) sample() float64 {
-	aval := mul.a.sample()
-	bval := mul.b.sample()
-	return aval * bval
+	return newArithmetic(a, b, func(x, y float64) float64 {
+		return x * y
+	})
 }
 
 func Div(a Uncertain, b Uncertain) Uncertain {
-	return &DivVariable{
-		a: a,
-		b: b,
+	return newArithmetic(a, b, func(x, y float64) float64 {
+		return x / y
+	})
+}
+
+func newArithmetic(a, b Uncertain, op combineFunc) *arithmeticOperation {
+	return &arithmeticOperation{
+		a:       a,
+		b:       b,
+		combine: op,
+		i:       newID(),
 	}
 }
 
-type DivVariable struct {
-	a, b Uncertain
+func (ar *arithmeticOperation) sampleWithTrace() *sample {
+	as := ar.a.sampleWithTrace()
+	bs := ar.b.sampleWithTrace()
+	v := ar.combine(as.value, bs.value)
+	s := as.combine(bs)
+	s.value = v
+	s.addTrace(ar.i, v)
+	return s
 }
 
-func (div *DivVariable) sample() float64 {
-	aval := div.a.sample()
-	bval := div.b.sample()
-	return aval * (1.0 / bval)
+func (ar *arithmeticOperation) sample() float64 {
+	a := ar.a.sample()
+	b := ar.b.sample()
+	return ar.combine(a, b)
 }
 
-func Materialize(uncertain Uncertain, n int) *Samples {
-	var floats []float64
-	for i := 0; i < n; i++ {
-		s := uncertain.sample()
-		floats = append(floats, s)
-	}
-	return FromSamples(floats)
+func (ar *arithmeticOperation) id() int {
+	return ar.i
 }
