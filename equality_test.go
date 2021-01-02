@@ -32,3 +32,18 @@ func TestNotEquals(t *testing.T) {
 		t.Error("Coin bias doesn't cancel")
 	}
 }
+
+func TestMontyHall(t *testing.T) {
+	carInDoor := NewEvenMultinomial([]float64{1.0, 2.0, 3.0})
+
+	chosenDoor := NewEvenMultinomial([]float64{1.0, 2.0, 3.0})
+	match := Equals(carInDoor, chosenDoor)
+	// Now monty opens a door
+	switchWins := match.Not()
+
+	v := Materialize(switchWins, 1000).Average()
+	t.Log(ExpectedValueWithConfidence(switchWins, SampleSize(20000)))
+	if !Within(v, 0.666, epsilon) {
+		t.Error("Switching should win 2/3 of the time")
+	}
+}

@@ -7,6 +7,11 @@ const numCompareSamples = 10_000
 
 type compareFunc func(x float64, y float64) bool
 
+// TODO(barakmich): These comparisons do a simple sampling comparison by
+// default, however, as an extension for speed and correctness, it's relatively
+// straightforward to type-inspect the uncertainty types and create a
+// better/faster/more-accruate implementation that matches.
+
 // LessThan returns a Bernoulli distribution
 // where the probability of a 1.0 is reflected by
 // how often a < b.

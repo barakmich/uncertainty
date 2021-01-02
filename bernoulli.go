@@ -32,6 +32,22 @@ func (b *Bernoulli) Not() *Bernoulli {
 	return NewBernoulli(1.0 - b.probability)
 }
 
+func (b *Bernoulli) Or(other *Bernoulli) *Bernoulli {
+	q1 := 1.0 - b.probability
+	q2 := 1.0 - other.probability
+	return NewBernoulli(1.0 - (q1 * q2))
+}
+
+func (b *Bernoulli) And(other *Bernoulli) *Bernoulli {
+	return NewBernoulli(b.probability * other.probability)
+}
+
+func (b *Bernoulli) Xor(other *Bernoulli) *Bernoulli {
+	x := b.probability * (1.0 - other.probability)
+	y := (1.0 - b.probability) * other.probability
+	return NewBernoulli(x + y)
+}
+
 func (b *Bernoulli) Pr() bool {
 	return b.ProbTrueAtLeast(0.5)
 }
