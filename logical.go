@@ -32,80 +32,72 @@ func (not *notOperation) id() int {
 	return not.i
 }
 
-type orOperation struct {
+type logicOperation struct {
 	a, b UncertainBool
 	i    int
+	op   func(a, b bool) bool
 }
 
 func Or(a, b UncertainBool) UncertainBool {
-	return &orOperation{a, b, newID()}
-}
-
-func (or *orOperation) sampleBool() bool {
-	aval := or.a.sampleBool()
-	bval := or.b.sampleBool()
-	return aval || bval
-}
-
-func (or *orOperation) sample() float64 {
-	return convertBoolSampleToFloat(or.sampleBool())
-}
-
-func (or *orOperation) sampleWithTrace() *sample {
-	atrace := or.a.sampleWithTrace()
-	btrace := or.b.sampleWithTrace()
-	combined := atrace.combine(btrace)
-	combined.value = 0.0
-	if convertFloatSampleToBool(atrace.value + btrace.value) {
-		combined.value = 1.0
-	}
-	combined.addTrace(or.i, combined.value)
-	return combined
-}
-
-func (or *orOperation) Pr() bool {
-	return Pr(or)
-}
-
-func (or *orOperation) id() int {
-	return or.i
-}
-
-type andOperation struct {
-	a, b UncertainBool
-	i    int
+	return newLogicOperation(a, b, func(a, b bool) bool {
+		return a || b
+	})
 }
 
 func And(a, b UncertainBool) UncertainBool {
-	return &andOperation{a, b, newID()}
+	return newLogicOperation(a, b, func(a, b bool) bool {
+		return a && b
+	})
 }
 
-func (and *andOperation) sampleBool() bool {
-	aval := and.a.sampleBool()
-	bval := and.b.sampleBool()
-	return aval && bval
-}
-
-func (and *andOperation) Pr() bool {
-	return Pr(and)
-}
-
-func (and *andOperation) sample() float64 {
-	return convertBoolSampleToFloat(and.sampleBool())
-}
-
-func (and *andOperation) sampleWithTrace() *sample {
-	atrace := and.a.sampleWithTrace()
-	btrace := and.b.sampleWithTrace()
-	combined := atrace.combine(btrace)
-	combined.value = 0.0
-	if convertFloatSampleToBool(atrace.value * btrace.value) {
-		combined.value = 1.0
+func newLogicOperation(a, b UncertainBool, f func(a, b bool) bool) *logicOperation {
+	return &logicOperation{
+		a:  a,
+		b:  b,
+		i:  newID(),
+		op: f,
 	}
-	combined.addTrace(and.i, combined.value)
+}
+
+func (l *logicOperation) sampleBool() bool {
+	return convertFloatSampleToBool(l.sample())
+}
+
+func (l *logicOperation) sample() float64 {
+	return l.sampleWithTrace().value
+}
+
+func (l *logicOperation) sampleWithTrace() *sample {
+	atrace := l.a.sampleWithTrace()
+	if v, ok := atrace.trace[l.b.id()]; ok {
+		s := l.op(
+			convertFloatSampleToBool(atrace.value),
+			convertFloatSampleToBool(v),
+		)
+		atrace.value = convertBoolSampleToFloat(s)
+		atrace.addTrace(l.i, atrace.value)
+		return atrace
+	}
+	btrace := l.b.sampleWithTrace()
+	if _, ok := btrace.trace[l.a.id()]; ok {
+		// We're dependent in the other direction. Let's optimize
+		l.a, l.b = l.b, l.a
+		return l.sampleWithTrace()
+	}
+	combined := atrace.combine(btrace)
+	s := l.op(
+		convertFloatSampleToBool(atrace.value),
+		convertFloatSampleToBool(btrace.value),
+	)
+	combined.value = convertBoolSampleToFloat(s)
+	combined.addTrace(l.i, combined.value)
 	return combined
 }
 
-func (and *andOperation) id() int {
-	return and.i
+func (l *logicOperation) Pr() bool {
+	return Pr(l)
+}
+
+func (l *logicOperation) id() int {
+	return l.i
 }

@@ -1,5 +1,7 @@
 package uncertainty
 
+import "fmt"
+
 type Samples struct {
 	Samples []*sample
 	n       int
@@ -53,6 +55,18 @@ func (s *Samples) First() float64 {
 
 func (s *Samples) id() int {
 	return s.i
+}
+
+func (s *Samples) String() string {
+	var out string
+	for i, v := range s.Samples {
+		if i == 0 {
+			out = v.String()
+			continue
+		}
+		out = fmt.Sprintf("%s\n%s", out, v.String())
+	}
+	return out
 }
 
 func Materialize(u Uncertain, n int) *Samples {

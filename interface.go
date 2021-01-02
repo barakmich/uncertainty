@@ -1,6 +1,9 @@
 package uncertainty
 
-import "sync"
+import (
+	"fmt"
+	"sync"
+)
 
 type Uncertain interface {
 	sample() float64
@@ -39,6 +42,10 @@ func (s *sample) combine(other *sample) *sample {
 		out.addTrace(k, v)
 	}
 	return out
+}
+
+func (s *sample) String() string {
+	return fmt.Sprintf("%0.4f : %#v", s.value, s.trace)
 }
 
 var (
