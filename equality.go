@@ -28,6 +28,12 @@ func NotEquals(a Uncertain, b Uncertain) *Bernoulli {
 	})
 }
 
+func Equals(a Uncertain, b Uncertain) *Bernoulli {
+	return comparison(a, b, func(x, y float64) bool {
+		return x == y
+	})
+}
+
 func comparison(a Uncertain, b Uncertain, compare compareFunc) *Bernoulli {
 	count := 0.0
 	for i := 0; i < numCompareSamples; i++ {

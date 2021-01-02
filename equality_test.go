@@ -19,3 +19,16 @@ func TestGaussianEquality(t *testing.T) {
 		t.Error("!x < y")
 	}
 }
+
+func TestNotEquals(t *testing.T) {
+	coinA := NewBernoulli(0.7)
+	coinB := NewBernoulli(0.5)
+
+	z := NotEquals(coinA, coinB)
+	avg := Materialize(z, 10000).Average()
+
+	// If it's not true 50% of the time...
+	if !Within(avg, 0.5, epsilon) {
+		t.Error("Coin bias doesn't cancel")
+	}
+}

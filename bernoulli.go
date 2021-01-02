@@ -28,6 +28,10 @@ func (b *Bernoulli) sample() float64 {
 	return 0.0
 }
 
+func (b *Bernoulli) Not() *Bernoulli {
+	return NewBernoulli(1.0 - b.probability)
+}
+
 func (b *Bernoulli) Pr() bool {
 	return b.ProbTrueAtLeast(0.5)
 }
